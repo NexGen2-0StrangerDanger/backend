@@ -2,49 +2,48 @@ import os
 import pyshark
 import time
 
-# Get OS info and set the network interface
-os_name = os.name
-if os_name == "nt":
-    interface = "Wi-Fi"  # Adjust if needed
-elif os_name == "posix":
-    interface = "en0"  # Adjust based on your system (e.g., "eth0", "wlan0")
-else:
-    print("Unidentified OS!")
-    exit(0)
+def capture_packets_with_interval(duration: int) -> list:
+    packets = []
+    '''Captures packets in the specified interval, 
+    adds it to a list and returns it everytime the interval ends'''
+    os_name = os.name
+    if os_name == "nt":
+        interface = "Wi-Fi" 
+    elif os_name == "posix":
+        interface = "en0"  
+    else:
+        print("Unidentified OS!")
+        exit(0)
 
-# Get capture duration from user input
-try:
-    duration = int(input("Enter packet capture duration (in seconds): "))
-except ValueError:
-    print("Invalid input! Please enter a valid number.")
-    exit(1)
+    # try:
+    #     duration = int(input("Enter packet capture duration (in seconds): "))
+    # except ValueError:
+    #     print("Invalid input! Please enter a valid number.")
+    #     exit(1)
 
-print(f"Capturing packets on {interface} for {duration} seconds...\n")
+    print(f"Capturing packets on {interface} for {duration} seconds...\n")
 
-# Capture packets
-capture = pyshark.LiveCapture(interface=interface)
-start_time = time.time()
-packet_summary = []
+    capture = pyshark.LiveCapture(interface=interface)
+    start_time = time.time()
 
-for packet in capture.sniff_continuously():
-    if time.time() - start_time > duration:
-        break  # Stop capturing after user-defined time
+    for packet in capture.sniff_continuously():
+        if time.time() - start_time > duration:
+            break
 
-    try:
-        protocol = packet.transport_layer  # TCP, UDP, etc.
-        src_ip = packet.ip.src
-        dst_ip = packet.ip.dst
-        src_port = packet[protocol].srcport
-        dst_port = packet[protocol].dstport
+        # try:
+        #     protocol = packet.transport_layer          
+        #     src_ip = packet.ip.src
+        #     dst_ip = packet.ip.dst
+        #     src_port = packet[protocol].srcport
+        #     dst_port = packet[protocol].dstport
 
-        packet_summary.append(
-            f"{protocol} Packet: {src_ip}:{src_port} → {dst_ip}:{dst_port}"
-        )
-    except AttributeError:
-        continue  # Skip packets without IP/protocol info
+        packets.append(f"{packet}")
 
-capture.close()
+    capture.close()
+    return packets
 
-# Combine and print output
-output = f"📡 Captured Packets ({duration} sec):\n" + "\n".join(packet_summary)
-print(output)
+if __name__ == "__main__":
+    timer = int(input("Enter time interval: "))
+    packets = capture_packets_with_interval(timer)
+    output = f"📡 Captured Packets ({timer} sec):\n" + "\n".join(packets)
+    print(output)
